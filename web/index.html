@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>fly — iteration 1</title>
+<style>
+  :root { color-scheme: dark; }
+  html,body { margin:0; height:100%; overflow:hidden; background:#07090c;
+              font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; color:#c8d2dc; }
+  canvas { display:block; }
+  #hud { position:fixed; top:12px; left:12px; padding:10px 12px; background:rgba(8,11,15,.72);
+         border:1px solid #1e2833; border-radius:6px; backdrop-filter:blur(6px); pointer-events:none;
+         min-width:190px; }
+  #hud b { color:#eaf0f6; font-weight:600; letter-spacing:.06em; text-transform:uppercase; font-size:10px; }
+  #hud table { border-collapse:collapse; margin-top:6px; }
+  #hud td { padding:1px 0; }
+  #hud td:first-child { color:#6f8296; padding-right:14px; }
+  #hud td:last-child { text-align:right; color:#dce6f0; font-variant-numeric:tabular-nums; }
+  #ctl { position:fixed; bottom:12px; left:12px; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  button, label { background:rgba(8,11,15,.72); border:1px solid #1e2833; color:#c8d2dc;
+                  border-radius:5px; padding:5px 10px; font:inherit; cursor:pointer; }
+  button:hover { border-color:#38506a; color:#fff; }
+  label { display:flex; gap:6px; align-items:center; user-select:none; }
+  #boot { position:fixed; inset:0; display:grid; place-content:center; text-align:center; gap:10px;
+          background:#07090c; z-index:9; }
+  #boot small { color:#5d7085; }
+  .err { color:#ff8080; max-width:60ch; text-align:left; white-space:pre-wrap; }
+</style>
+</head>
+<body>
+<div id="boot"><div>loading fly…</div><small id="bootmsg">fetching wasm</small></div>
+<div id="hud">
+  <b>flybody / mujoco wasm</b>
+  <table>
+    <tr><td>fps</td><td id="s_fps">–</td></tr>
+    <tr><td>sim time</td><td id="s_time">–</td></tr>
+    <tr><td>real-time</td><td id="s_rt">–</td></tr>
+    <tr><td>steps/s</td><td id="s_sps">–</td></tr>
+    <tr><td>bodies</td><td id="s_nbody">–</td></tr>
+    <tr><td>actuators</td><td id="s_nu">–</td></tr>
+    <tr><td>triangles</td><td id="s_tri">–</td></tr>
+  </table>
+</div>
+<div id="ctl">
+  <button id="b_pause">pause</button>
+  <button id="b_reset">reset</button>
+  <label><input type="checkbox" id="b_col"> collision geoms</label>
+  <label><input type="checkbox" id="b_idle" checked> idle motion</label>
+</div>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/jsm/" } }
+</script>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
