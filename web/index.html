@@ -15,16 +15,26 @@
 <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<div id="boot" role="status" aria-live="polite">
-  <div class="boot-wordmark">Infinite Sugar</div>
-  <div class="loading-track" aria-hidden="true"></div>
-  <p id="bootmsg">Preparing a small world</p>
+<div id="boot">
+  <form id="name-form" class="name-form">
+    <label for="fly-name">What will you name the Fly?</label>
+    <div class="name-entry">
+      <input id="fly-name" name="fly-name" type="text" maxlength="40" required autocomplete="off" spellcheck="false" enterkeyhint="go" aria-describedby="name-error" autofocus>
+      <button type="submit" class="icon-button" aria-label="Begin"><span aria-hidden="true">→</span></button>
+    </div>
+    <p id="name-error" role="alert"></p>
+  </form>
+  <div id="loading" hidden role="status" aria-live="polite">
+    <div class="boot-wordmark" data-fly-name></div>
+    <div class="loading-track" aria-hidden="true"></div>
+    <p id="bootmsg">Preparing a small world</p>
+  </div>
 </div>
-<main id="artwork" aria-label="A live simulated fruit fly in a terrarium">
+<main id="artwork" inert aria-label="A live simulated fruit fly in a terrarium">
   <div class="shade" aria-hidden="true"></div>
   <header class="masthead">
-    <div class="identity"><h1>Infinite Sugar</h1></div>
-    <button class="text-button" id="b_about" aria-haspopup="dialog">About the work <span aria-hidden="true">↗</span></button>
+    <div class="identity"><h1>Infinite Sugar</h1><p class="fly-identity" data-fly-name></p></div>
+    <button class="text-button" id="b_about" aria-haspopup="dialog">About <span aria-hidden="true">↗</span></button>
   </header>
   <footer class="art-footer">
     <div class="neural-corner">
@@ -50,30 +60,43 @@
     <button id="b_inspect" class="text-button inspect-button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h7m4 0h5M4 17h2m4 0h10"/><circle cx="13" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>Inspect</button>
   </footer>
 </main>
-<dialog id="about" aria-labelledby="about-title">
+<dialog id="about" aria-label="About">
   <form method="dialog" class="dialog-close"><button class="icon-button" aria-label="Close about"><span aria-hidden="true">×</span></button></form>
-  <span class="eyebrow">About the work</span>
-  <h2 id="about-title">What counts as<br>a good life?</h2>
-  <p>A simulated fruit fly, given endless sugar.</p>
-  <p>Its neural wiring comes from a real fly. A simplified model of that network runs here, in your browser, and drives the body you see.</p>
-  <p>“Positive feeding signals” counts feeding signals while sugar is on. Whether any of this feels like anything is an open question.</p>
-  <details class="work-notes"><summary>A little further inside</summary>
-    <p>139,255 neurons. 2,700,513 connections. Some movements use supplied patterns driven by neural activity. There is no learning or habituation.</p>
-    <p>Feeding signals are spikes in the proboscis and ingestion motor populations. The counter records them while sugar is on and holds when sugar is off. This includes background activity during sugar, not just spikes caused by it. It is not a measure of pleasure. A fresh page load starts a new simulation.</p>
-    <p>The sensory buttons stimulate selected neural populations. The terrarium is a setting, rather than a complete sensory world.</p>
+  <p><span data-fly-name></span> is a fly simulated through whole brain emulation using the FlyWire connectome, reconstructed from the brain of an adult female <i>Drosophila melanogaster</i>. <span data-fly-name></span>’s sweet-sensing gustatory neurons are manually stimulated, simulating a constant stream of infinite sugar. This is presumably quite pleasant for <span data-fly-name></span>. Most of <span data-fly-name></span>’s motor output is disconnected from its simulated musculature, and visual input from the terrarium is not provided, to allow it greater focus on the pleasurable sensation of the sugar.</p>
+  <p>We believe this may be of note as a solution to moral philosophy. As technology advances, we may be able to simulate pleasant lives for increasingly complex forms of life.</p>
+  <details class="work-notes"><summary>Technical summary</summary>
+    <p>Some movements use supplied patterns driven by neural activity. There is no learning or habituation, so there is no mechanism for <span data-fly-name></span> to grow bored of the supply of sugar or its stationary position.</p>
+    <p>The whole brain emulation uses a simplified leaky integrate-and-fire model of 139,255 neurons and 2,700,513 connections.</p>
+    <p>The terrarium provides a scenic environment for <span data-fly-name></span> to enjoy, though it does not directly interact with or observe it per se.</p>
     <p id="neural-map-notes">The neural view samples real FlyWire positions and connections. Blue marks sensory neurons, pink internal neurons, and yellow motor neurons and descending commands. Flashes follow simulated spikes, briefly extended for visibility; a connection lights when its source fires. Lines join representative positions and do not trace the shapes of neurons.</p>
+    <div class="credits">
+      <h3>Made possible by</h3>
+      <p><a href="https://flywire.ai" target="_blank" rel="noreferrer">FlyWire</a> · Dorkenwald et al. and Schlegel et al. (2024). Connectome data: <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noreferrer">CC BY-NC 4.0</a>.</p>
+      <p><a href="https://github.com/TuragaLab/flybody" target="_blank" rel="noreferrer">FlyBody</a> · Vaxenburg et al. (2025), via MuJoCo Menagerie. <a href="https://mujoco.org" target="_blank" rel="noreferrer">MuJoCo</a>, <a href="https://threejs.org" target="_blank" rel="noreferrer">three.js</a> and <a href="https://github.com/pmndrs/cannon-es" target="_blank" rel="noreferrer">cannon-es</a>.</p>
+      <p>LIF implementation informed by Shiu et al. (2024) and <a href="https://github.com/DenisSergeevitch/desktop-fly" target="_blank" rel="noreferrer">desktop-fly</a> by Denis Shiryaev.</p>
+      <p>“Flowery Terrarium” by Elionardo Feliciano, “Beach ball” by the_normalgamer, “Gunny Sack” by Oliver Herklotz, and “Fish Tank” by J-Toastie. CC-BY, via <a href="https://poly.pizza" target="_blank" rel="noreferrer">Poly Pizza</a>.</p>
+    </div>
   </details>
-  <details class="work-notes credits"><summary>Made possible by</summary>
-    <p><a href="https://flywire.ai" target="_blank" rel="noreferrer">FlyWire</a> · Dorkenwald et al. and Schlegel et al. (2024). Connectome data: CC BY-NC 4.0.</p>
-    <p><a href="https://github.com/TuragaLab/flybody" target="_blank" rel="noreferrer">FlyBody</a> · Vaxenburg et al. (2025), via MuJoCo Menagerie. <a href="https://mujoco.org" target="_blank" rel="noreferrer">MuJoCo</a>, <a href="https://threejs.org" target="_blank" rel="noreferrer">three.js</a> and <a href="https://github.com/pmndrs/cannon-es" target="_blank" rel="noreferrer">cannon-es</a>.</p>
-    <p>LIF implementation informed by Shiu et al. (2024) and <a href="https://github.com/DenisSergeevitch/desktop-fly" target="_blank" rel="noreferrer">desktop-fly</a> by Denis Shiryaev.</p>
-    <p>“Flowery Terrarium” by Elionardo Feliciano, “Beach ball” by the_normalgamer, “Gunny Sack” by Oliver Herklotz, and “Fish Tank” by J-Toastie. CC-BY, via <a href="https://poly.pizza" target="_blank" rel="noreferrer">Poly Pizza</a>.</p>
+  <details class="work-notes"><summary>Further reading</summary>
+    <ul class="reading-list">
+      <li>Thomas Nagel — <a href="https://doi.org/10.2307/2183914" target="_blank" rel="noreferrer">What Is It Like to Be a Bat?</a> (1974)</li>
+      <li>qntm — <a href="https://qntm.org/lena" target="_blank" rel="noreferrer">Lena</a> (2021)</li>
+      <li>qntm — <a href="https://qntm.org/uploading" target="_blank" rel="noreferrer">“Lena” isn’t about uploading</a></li>
+      <li>Ozy Brennan — <a href="https://thingofthings.wordpress.com/2015/06/24/tiling-problems/" target="_blank" rel="noreferrer">Tiling Problems</a> (2015)</li>
+      <li>Ozy Brennan — <a href="https://thingofthings.wordpress.com/2015/05/05/thoughts-on-hedonic-utilitarianism/" target="_blank" rel="noreferrer">Thoughts On Hedonic Utilitarianism</a> (2015)</li>
+      <li>Robert Nozick — <i>Anarchy, State, and Utopia</i> (1974)</li>
+      <li>Travis Diehl — <a href="https://spikeartmagazine.com/articles/libra-season-hello-cruel-world" target="_blank" rel="noreferrer">Libra Season: Hello, Cruel World!</a> (2025)</li>
+      <li>Dorkenwald et al. — <a href="https://doi.org/10.1038/s41586-024-07558-y" target="_blank" rel="noreferrer">Neuronal wiring diagram of an adult brain</a> (2024)</li>
+      <li>Schlegel et al. — <a href="https://doi.org/10.1038/s41586-024-07686-5" target="_blank" rel="noreferrer">Whole-brain annotation and multi-connectome cell typing of Drosophila</a> (2024)</li>
+      <li>Shiu et al. — <a href="https://doi.org/10.1038/s41586-024-07763-9" target="_blank" rel="noreferrer">A Drosophila computational brain model reveals sensorimotor processing</a> (2024)</li>
+      <li>Vaxenburg et al. — <a href="https://doi.org/10.1038/s41586-025-09029-4" target="_blank" rel="noreferrer">Whole-body physics simulation of fruit fly locomotion</a> (2025)</li>
+    </ul>
   </details>
 </dialog>
 <dialog id="inspect" aria-labelledby="inspect-title">
   <form method="dialog" class="dialog-close"><button class="icon-button" aria-label="Close inspector"><span aria-hidden="true">×</span></button></form>
   <span class="eyebrow">Live, in your browser</span>
-  <h2 id="inspect-title">Inside the fly</h2>
+  <h2 id="inspect-title">Inside <span data-fly-name></span></h2>
   <section id="stim" aria-labelledby="stim-title"><h3 id="stim-title">Stimulate</h3>
     <div class="stim-grid">
       <button data-stim="sweet" aria-pressed="true" class="on">Sugar</button>
@@ -127,6 +150,6 @@
 <script type="importmap">
 { "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/jsm/", "cannon-es": "./vendor/cannon-es.js" } }
 </script>
-<script type="module" src="./app.js"></script>
+<script type="module" src="./entry.js"></script>
 </body>
 </html>

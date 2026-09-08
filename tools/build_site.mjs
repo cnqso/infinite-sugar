@@ -8,7 +8,7 @@ const web = path.join(root, 'web');
 const out = path.join(root, 'dist');
 const manifest = JSON.parse(await fs.readFile(path.join(web, 'model/manifest.json'), 'utf8'));
 const meta = JSON.parse(await fs.readFile(path.join(web, 'brain/meta.json'), 'utf8'));
-for (const name of ['index.html', 'style.css', 'app.js', 'brain.js', 'performance.js', 'neural-map.js', 'brain/neural-map.json', 'model/scene.xml',
+for (const name of ['index.html', 'style.css', 'entry.js', 'app.js', 'brain.js', 'performance.js', 'neural-map.js', 'brain/neural-map.json', 'model/scene.xml',
   'model/fruitfly.xml', ...manifest.assets.map(a => `model/assets/${a}`),
   ...Object.keys(meta.files).map(k => `brain/${k}.bin.gz`)]) {
   await fs.access(path.join(web, name));

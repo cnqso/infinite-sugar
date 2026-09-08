@@ -742,7 +742,7 @@ function stepSimulation() {
     renderer.shadowMap.enabled = quality.profile.shadowSize > 0;
     renderer.shadowMap.type = THREE.PCFShadowMap;
     document.body.appendChild(renderer.domElement);
-    renderer.domElement.setAttribute('aria-label', 'Live fruit fly simulation. Drag to orbit; scroll to zoom.');
+    renderer.domElement.setAttribute('aria-label', `${document.body.dataset.namedFly || 'Fly'}, live fruit fly simulation. Drag to orbit; scroll to zoom.`);
     renderer.domElement.setAttribute('role', 'img');
 
     // Keep the fly's horizontal framing on narrow screens rather than cropping its wings.
@@ -946,6 +946,8 @@ function stepSimulation() {
     }
     applyQuality();
     boot.remove();
+    $('artwork').removeAttribute('inert');
+    $('b_about').focus({ preventScroll:true });
 
     // ---- loop
     const timestep = 1e-4;                          // flybody's opt.timestep
