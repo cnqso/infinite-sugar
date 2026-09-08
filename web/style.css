@@ -79,6 +79,9 @@ dialog p{font-size:16px;line-height:1.65;color:#c9c2ce;margin:0 0 18px}
 dialog p:first-of-type{color:var(--ink)}
 #about{padding-top:76px}
 #about p{overflow-wrap:anywhere}
+.project-link{position:absolute;top:16px;left:16px;display:grid;place-items:center;width:44px;height:44px;color:var(--muted);border-radius:50%}
+.project-link:hover{color:var(--ink)}
+.project-link svg{width:21px;height:21px;fill:currentColor}
 .credits{margin-top:28px}
 .reading-list{list-style:none;padding:0;margin:0 0 18px;font-size:14px;line-height:1.65;color:var(--muted)}
 .reading-list li{margin:0 0 18px;overflow-wrap:anywhere}
