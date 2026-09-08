@@ -68,7 +68,7 @@ in `.openai/hosting.json`; `dist/` is generated and ignored by Git.
 
 ## Credits
 
-Everything load-bearing is borrowed:
+Built with:
 
 - **Body** — [`flybody`](https://github.com/google-deepmind/mujoco_menagerie/tree/main/flybody)
   from MuJoCo Menagerie (Vaxenburg et al., *Whole-body physics simulation of fruit fly

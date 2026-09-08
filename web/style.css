@@ -73,7 +73,7 @@ body.is-paused .play-symbol{display:block}
 dialog{color:var(--ink);background:var(--panel);border:1px solid #ffffff25;border-radius:3px;padding:48px;width:min(540px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;box-shadow:0 28px 100px #0009}
 dialog::backdrop{background:#0e0b1280;backdrop-filter:blur(7px)}
 .dialog-close{position:absolute;right:16px;top:16px}
-.dialog-close .icon-button{background:transparent;border:0;font:28px/1 sans-serif}
+.dialog-close .icon-button{background:transparent;border:0;padding:0}
 h2{font:400 44px/1.06 var(--serif);letter-spacing:-1.1px;margin:22px 0 28px}
 dialog p{font-size:16px;line-height:1.65;color:#c9c2ce;margin:0 0 18px}
 dialog p:first-of-type{color:var(--ink)}
