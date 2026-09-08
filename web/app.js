@@ -763,7 +763,8 @@ function stepSimulation() {
 
     scene.add(new THREE.HemisphereLight(0x9fc4ff, 0x1a2028, 1.15));
     const key = new THREE.DirectionalLight(0xffffff, 2.1);
-    key.position.set(0.5, -0.7, 0.9); key.castShadow = true;
+    // The fly faces +X; +Y is its left. Preserve the sun's radius and elevation.
+    key.position.set(0, Math.hypot(0.5, 0.7), 0.9); key.castShadow = true;
     key.shadow.mapSize.set(quality.profile.shadowSize || 512, quality.profile.shadowSize || 512);
     const c = key.shadow.camera; c.near = 0.05; c.far = 4;
     c.left = -0.5; c.right = 0.5; c.top = 0.5; c.bottom = -0.5;
