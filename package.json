@@ -1,0 +1,13 @@
+{
+  "name": "utilifly",
+  "private": true,
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "node tools/build_site.mjs"
+  },
+  "devDependencies": {
+    "@types/three": "0.185.4",
+    "cannon-es": "0.20.0",
+    "typescript": "7.0.2"
+  }
+}

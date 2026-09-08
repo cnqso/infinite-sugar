@@ -1,0 +1,4 @@
+# Static Cloudflare Pages project. Git integration watches main; no Worker or paid bindings.
+name = "infinite-sugar"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-09-08"

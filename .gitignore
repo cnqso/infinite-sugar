@@ -4,3 +4,8 @@ __pycache__/
 *.pyc
 /scratch/
 _to_delete/
+/data/raw/
+/dist/
+
+# Local legacy Sites preview configuration; production uses Cloudflare Pages.
+/.openai/

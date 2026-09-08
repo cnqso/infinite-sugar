@@ -2,37 +2,115 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>fly — iteration 1</title>
-<style>
-  :root { color-scheme: dark; }
-  html,body { margin:0; height:100%; overflow:hidden; background:#07090c;
-              font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; color:#c8d2dc; }
-  canvas { display:block; }
-  #hud { position:fixed; top:12px; left:12px; padding:10px 12px; background:rgba(8,11,15,.72);
-         border:1px solid #1e2833; border-radius:6px; backdrop-filter:blur(6px); pointer-events:none;
-         min-width:190px; }
-  #hud b { color:#eaf0f6; font-weight:600; letter-spacing:.06em; text-transform:uppercase; font-size:10px; }
-  #hud table { border-collapse:collapse; margin-top:6px; }
-  #hud td { padding:1px 0; }
-  #hud td:first-child { color:#6f8296; padding-right:14px; }
-  #hud td:last-child { text-align:right; color:#dce6f0; font-variant-numeric:tabular-nums; }
-  #ctl { position:fixed; bottom:12px; left:12px; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
-  button, label { background:rgba(8,11,15,.72); border:1px solid #1e2833; color:#c8d2dc;
-                  border-radius:5px; padding:5px 10px; font:inherit; cursor:pointer; }
-  button:hover { border-color:#38506a; color:#fff; }
-  label { display:flex; gap:6px; align-items:center; user-select:none; }
-  #boot { position:fixed; inset:0; display:grid; place-content:center; text-align:center; gap:10px;
-          background:#07090c; z-index:9; }
-  #boot small { color:#5d7085; }
-  .err { color:#ff8080; max-width:60ch; text-align:left; white-space:pre-wrap; }
-</style>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#151218">
+<meta name="description" content="A simulated fruit fly, given infinite sugar. An artwork about the possibility of a small good life.">
+<meta property="og:title" content="Infinite Sugar">
+<meta property="og:description" content="A simulated fruit fly, given infinite sugar. An artwork running in your browser.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://infinitesugar.cnqso.com/">
+<link rel="canonical" href="https://infinitesugar.cnqso.com/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23151218'/%3E%3Ctext x='32' y='45' text-anchor='middle' fill='%23efd88a' font-family='Georgia' font-size='44'%3E%E2%88%9E%3C/text%3E%3C/svg%3E">
+<title>Infinite Sugar</title>
+<link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<div id="boot"><div>loading fly…</div><small id="bootmsg">fetching wasm</small></div>
-<div id="hud">
-  <b>flybody / mujoco wasm</b>
-  <table>
+<div id="boot" role="status" aria-live="polite">
+  <div class="boot-wordmark">Infinite Sugar</div>
+  <div class="loading-track" aria-hidden="true"></div>
+  <p id="bootmsg">Preparing a small world</p>
+</div>
+<main id="artwork" aria-label="A live simulated fruit fly in a terrarium">
+  <div class="shade" aria-hidden="true"></div>
+  <header class="masthead">
+    <div class="identity"><h1>Infinite Sugar</h1></div>
+    <button class="text-button" id="b_about" aria-haspopup="dialog">About the work <span aria-hidden="true">↗</span></button>
+  </header>
+  <footer class="art-footer">
+    <div class="neural-corner">
+    <div class="counter" aria-label="Cumulative positive feeding signals while sugar is on">
+      <span id="s_cnt">0</span>
+      <span class="counter-label"><i aria-hidden="true"></i> positive feeding signals</span>
+    </div>
+    <figure class="neural-view" aria-labelledby="neural-map-title">
+      <figcaption id="neural-map-title">Neural activity</figcaption>
+      <canvas id="neural-map" role="img" aria-label="A sampled FlyWire neuron map. Sensory neurons flash blue, internal neurons pink, and motor and descending command neurons yellow when they fire in the simulation." aria-describedby="neural-map-notes"></canvas>
+      <div class="neural-legend" aria-hidden="true"><span class="sensory">Sensory</span><span class="internal">Internal</span><span class="motor">Motor</span></div>
+    </figure>
+    </div>
+    <div class="art-controls">
+      <button id="b_pause" class="icon-button" aria-label="Pause" title="Pause">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><g class="pause-symbol"><path d="M9 6v12M15 6v12"/></g><g class="play-symbol"><path d="m9 6 9 6-9 6Z"/></g></svg>
+      </button>
+      <button id="b_home" class="icon-button" aria-label="Return to the fly" title="Return to the fly">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4H4v4m12-4h4v4M4 16v4h4m12-4v4h-4"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+      <button id="b_sugar" class="sugar-button on" data-stim="sweet" aria-pressed="true"><span class="sugar-dot" aria-hidden="true"></span><span id="sugar-label">Sugar on</span></button>
+    </div>
+    <button id="b_inspect" class="text-button inspect-button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h7m4 0h5M4 17h2m4 0h10"/><circle cx="13" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>Inspect</button>
+  </footer>
+</main>
+<dialog id="about" aria-labelledby="about-title">
+  <form method="dialog" class="dialog-close"><button class="icon-button" aria-label="Close about"><span aria-hidden="true">×</span></button></form>
+  <span class="eyebrow">About the work</span>
+  <h2 id="about-title">What counts as<br>a good life?</h2>
+  <p>A simulated fruit fly, given endless sugar.</p>
+  <p>Its neural wiring comes from a real fly. A simplified model of that network runs here, in your browser, and drives the body you see.</p>
+  <p>“Positive feeding signals” counts feeding signals while sugar is on. Whether any of this feels like anything is an open question.</p>
+  <details class="work-notes"><summary>A little further inside</summary>
+    <p>139,255 neurons. 2,700,513 connections. Some movements use supplied patterns driven by neural activity. There is no learning or habituation.</p>
+    <p>Feeding signals are spikes in the proboscis and ingestion motor populations. The counter records them while sugar is on and holds when sugar is off. This includes background activity during sugar, not just spikes caused by it. It is not a measure of pleasure. A fresh page load starts a new simulation.</p>
+    <p>The sensory buttons stimulate selected neural populations. The terrarium is a setting, rather than a complete sensory world.</p>
+    <p id="neural-map-notes">The neural view samples real FlyWire positions and connections. Blue marks sensory neurons, pink internal neurons, and yellow motor neurons and descending commands. Flashes follow simulated spikes, briefly extended for visibility; a connection lights when its source fires. Lines join representative positions and do not trace the shapes of neurons.</p>
+  </details>
+  <details class="work-notes credits"><summary>Made possible by</summary>
+    <p><a href="https://flywire.ai" target="_blank" rel="noreferrer">FlyWire</a> · Dorkenwald et al. and Schlegel et al. (2024). Connectome data: CC BY-NC 4.0.</p>
+    <p><a href="https://github.com/TuragaLab/flybody" target="_blank" rel="noreferrer">FlyBody</a> · Vaxenburg et al. (2025), via MuJoCo Menagerie. <a href="https://mujoco.org" target="_blank" rel="noreferrer">MuJoCo</a>, <a href="https://threejs.org" target="_blank" rel="noreferrer">three.js</a> and <a href="https://github.com/pmndrs/cannon-es" target="_blank" rel="noreferrer">cannon-es</a>.</p>
+    <p>LIF implementation informed by Shiu et al. (2024) and <a href="https://github.com/DenisSergeevitch/desktop-fly" target="_blank" rel="noreferrer">desktop-fly</a> by Denis Shiryaev.</p>
+    <p>“Flowery Terrarium” by Elionardo Feliciano, “Beach ball” by the_normalgamer, “Gunny Sack” by Oliver Herklotz, and “Fish Tank” by J-Toastie. CC-BY, via <a href="https://poly.pizza" target="_blank" rel="noreferrer">Poly Pizza</a>.</p>
+  </details>
+</dialog>
+<dialog id="inspect" aria-labelledby="inspect-title">
+  <form method="dialog" class="dialog-close"><button class="icon-button" aria-label="Close inspector"><span aria-hidden="true">×</span></button></form>
+  <span class="eyebrow">Live, in your browser</span>
+  <h2 id="inspect-title">Inside the fly</h2>
+  <section id="stim" aria-labelledby="stim-title"><h3 id="stim-title">Stimulate</h3>
+    <div class="stim-grid">
+      <button data-stim="sweet" aria-pressed="true" class="on">Sugar</button>
+      <button data-stim="bitter" aria-pressed="false">Bitter</button>
+      <button data-stim="odour" aria-pressed="false">Odour</button>
+      <button data-stim="touch" aria-pressed="false">Touch</button>
+      <button data-stim="light" aria-pressed="false">Light</button>
+      <button data-stim="looming" aria-pressed="false">Looming</button>
+      <button data-stim="heat" aria-pressed="false">Heat</button>
+      <button data-stim="damp" aria-pressed="false">Humid</button>
+    </div>
+  </section>
+  <section id="ctl" aria-labelledby="body-title"><h3 id="body-title">Body</h3>
+    <label>Neural movement<input type="checkbox" id="b_idle" checked></label>
+    <label>Foot shuffle<input type="checkbox" id="b_shuffle" checked></label>
+    <label>Show collisions<input type="checkbox" id="b_col"></label>
+    <button id="b_reset" class="secondary-button">Reset body</button>
+  </section>
+  <div id="hud">
+    <details open><summary>Neural activity</summary>  <table>
+    <tr><td>neurons</td><td id="s_neu">–</td></tr>
+    <tr><td>connections</td><td id="s_syn">–</td></tr>
+    <tr><td>brain time</td><td id="s_bms">–</td></tr>
+    <tr><td>whole brain</td><td id="s_pop">–</td></tr>
+    <tr><td>sweet GRN</td><td id="s_grn">–</td></tr>
+    <tr><td>proboscis MN</td><td id="s_mnp">–</td></tr>
+    <tr><td>ingestion MN</td><td id="s_mni">–</td></tr>
+    <tr><td>neck MN</td><td id="s_neck">–</td></tr>
+    <tr><td>antennal MN</td><td id="s_ant">–</td></tr>
+    <tr><td>giant fiber</td><td id="s_gf">–</td></tr>
+    <tr><td>escape wing DN</td><td id="s_esc">–</td></tr>
+    <tr><td>steering DN L/R</td><td id="s_steer">–</td></tr>
+    <tr><td>grooming DN</td><td id="s_groom">–</td></tr>
+    <tr><td>PAM (DA)</td><td id="s_pam">–</td></tr>
+  </table>
+</details>
+    <details><summary>Simulation</summary>  <table>
     <tr><td>fps</td><td id="s_fps">–</td></tr>
     <tr><td>sim time</td><td id="s_time">–</td></tr>
     <tr><td>real-time</td><td id="s_rt">–</td></tr>
@@ -41,15 +119,13 @@
     <tr><td>actuators</td><td id="s_nu">–</td></tr>
     <tr><td>triangles</td><td id="s_tri">–</td></tr>
   </table>
-</div>
-<div id="ctl">
-  <button id="b_pause">pause</button>
-  <button id="b_reset">reset</button>
-  <label><input type="checkbox" id="b_col"> collision geoms</label>
-  <label><input type="checkbox" id="b_idle" checked> idle motion</label>
-</div>
+</details>
+  </div>
+  <details id="scene-tools"><summary>Scene placement</summary><div id="scene-position"></div></details>
+</dialog>
+<noscript><div class="no-script">Infinite Sugar needs JavaScript to bring its world to life.</div></noscript>
 <script type="importmap">
-{ "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/jsm/" } }
+{ "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/jsm/", "cannon-es": "./vendor/cannon-es.js" } }
 </script>
 <script type="module" src="./app.js"></script>
 </body>
