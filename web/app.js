@@ -32,10 +32,7 @@ const boot = requiredElement('boot');
 const bootmsg = requiredElement('bootmsg');
 /** @param {string} message */
 const say = (message) => {
-  bootmsg.textContent = /calibrat/.test(message) ? 'Finding a rhythm'
-    : /connectome|weights/.test(message) ? 'Connecting a brain'
-    : /meshes|terrarium/.test(message) ? 'Making room'
-    : 'Preparing a small world';
+  bootmsg.textContent = message.charAt(0).toUpperCase() + message.slice(1);
 };
 const $ = requiredElement;
 
@@ -64,9 +61,9 @@ async function stageFiles(mj) {
   await Promise.all(files.map(async (f) => {
     const buf = new Uint8Array(await (await fetch(`${MODEL_DIR}/${f}`)).arrayBuffer());
     mj.FS.writeFile('/w/' + f, buf);
-    if (++done % 20 === 0) say(`staging assets ${done}/${files.length}`);
+    if (++done % 20 === 0) say(`loading body assets ${done}/${files.length}`);
   }));
-  say(`staged ${files.length} files`);
+  say(`loaded ${files.length} body assets`);
 }
 
 // ---------------------------------------------------------------- geometry
@@ -712,18 +709,18 @@ function stepSimulation() {
 // ---------------------------------------------------------------- main
 (async function main() {
   try {
-    say('instantiating wasm');
+    say('initializing physics');
     mujoco = await loadMujoco();
     await stageFiles(mujoco);
 
-    say('compiling model');
+    say('compiling body model');
     model = mujoco.MjModel.loadFromXML('/w/' + SCENE_XML);
     data  = new mujoco.MjData(model);
 
     brain = await Brain.load('./brain', say);
     say('calibrating resting rates');
     await brain.calibrateResponsive(2500);
-    say('brain ready');
+    say('initializing renderer');
 
     // ---- three.js
     THREE.Object3D.DEFAULT_UP.set(0, 0, 1);        // MuJoCo is Z-up
@@ -777,11 +774,10 @@ function stepSimulation() {
     resetSim();
     syncGeoms(model, data);
 
-    say('staging terrarium');
+    say('loading terrarium');
     const flyBox = new THREE.Box3();
     for (const g of geomNodes) if (g.group <= 2 && !g.isFloor) flyBox.expandByObject(g.mesh);
     loadProps(scene, flyBox).then(() => {
-      wireDebugPanel();
       const terrarium = propObjs['terrarium.glb'];
       /** @type {THREE.Mesh[]} */
       const hillMeshes = [];
@@ -862,17 +858,6 @@ function stepSimulation() {
         e.currentTarget.title = sim.paused ? 'Resume' : 'Pause';
       }
     };
-    $('b_reset').onclick = () => { resetSim(); syncGeoms(model, data); };
-    $('b_col').onchange  = (e) => {
-      if (!(e.currentTarget instanceof HTMLInputElement)) return;
-      for (const g of geomNodes) if (g.group > 2) g.mesh.visible = e.currentTarget.checked;
-    };
-    $('b_idle').onchange = (e) => {
-      if (e.currentTarget instanceof HTMLInputElement) neural = e.currentTarget.checked;
-    };
-    $('b_shuffle').onchange = (e) => {
-      if (e.currentTarget instanceof HTMLInputElement) shuffle.enabled = e.currentTarget.checked;
-    };
     for (const btn of document.querySelectorAll('[data-stim]')) {
       if (!(btn instanceof HTMLButtonElement)) continue;
       const k = btn.dataset.stim;
@@ -902,23 +887,6 @@ function stepSimulation() {
       dialog.addEventListener('click', (e) => {
         const r = dialog.getBoundingClientRect();
         if (e.target === dialog && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)) dialog.close();
-      });
-    }
-
-    function wireDebugPanel() {
-      const t = propObjs['terrarium.glb'];
-      if (!t) return;
-      const panel = $('scene-position');
-      const axes = /** @type {const} */ (['x','y','z']);
-      panel.innerHTML = axes.map(a =>
-        `<label>${a.toUpperCase()} <input data-axis="${a}" type="number" step="0.05" ` +
-        `value="${t.position[a].toFixed(3)}"></label>`).join('');
-      panel.querySelectorAll('input').forEach(inp => {
-        if (!(inp instanceof HTMLInputElement)) return;
-        inp.oninput = () => {
-          const axis = inp.dataset.axis;
-          if (axis === 'x' || axis === 'y' || axis === 'z') t.position[axis] = parseFloat(inp.value) || 0;
-        };
       });
     }
 
@@ -1047,7 +1015,7 @@ function stepSimulation() {
     console.error(err);
     const message = err instanceof Error ? err.stack || err.message : String(err);
     boot.setAttribute('role', 'alert');
-    boot.innerHTML = '<div class="err"><h2>A little trouble waking up.</h2><p>The simulation could not start. Try reloading in a browser with WebGL enabled.</p><a href="./">Try again</a></div>';
+    boot.innerHTML = '<div class="err"><h2>Unable to start simulation.</h2><p>The simulation could not start. Try reloading in a browser with WebGL enabled.</p><a href="./">Reload</a></div>';
     const flyWindow = /** @type {Window & typeof globalThis & { __flyError?: string }} */ (window);
     flyWindow.__flyError = message;
   }
