@@ -1010,6 +1010,22 @@ function stepSimulation() {
                                  nodes: geomNodes.length,
                                  brainMs: brain.ms, sugar: brain.sugar,
                                  rates: { ...brain.rate }, pop: brain.popRate }) };
+    // The state exists only in this tab. Modern browsers replace returnValue with
+    // their own warning, and mobile process termination may skip this event entirely.
+    const exitMessage = `${document.body.dataset.namedFly || 'The fly'} exists fully within this browser tab. If you close the tab this is the relative equivalent of killing an insect. Do you accept this moral hazard?`;
+    /** @param {BeforeUnloadEvent} event */
+    const warnBeforeExit = event => {
+      event.preventDefault();
+      event.returnValue = exitMessage;
+    };
+    window.addEventListener('beforeunload', warnBeforeExit);
+    $('b_exit').onclick = () => {
+      if (!window.confirm(exitMessage)) return;
+      window.removeEventListener('beforeunload', warnBeforeExit);
+      // Pages cannot close a tab they did not open. Navigation destroys this
+      // document and its simulation without a second browser confirmation.
+      window.location.replace('about:blank');
+    };
     flyWindow.__flyReady = true;
   } catch (err) {
     console.error(err);

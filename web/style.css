@@ -15,9 +15,9 @@ canvas{display:block;position:fixed;inset:0;z-index:0;touch-action:none}
 .shade{position:absolute;inset:0;background:linear-gradient(180deg,#151218aa,transparent 25%,transparent 55%,#151218c9),linear-gradient(90deg,#15121850,transparent 35%,transparent 75%,#15121835)}
 
 .masthead{position:absolute;top:0;left:0;width:100%;padding:38px 44px;display:flex;justify-content:space-between;align-items:flex-start;gap:24px}
-.identity h1{font-family:var(--serif);font-weight:400;font-style:italic;font-size:44px;line-height:1;margin:0;letter-spacing:-2px}
+.identity h1{font-family:var(--serif);font-weight:400;font-style:italic;font-size:44px;line-height:1;margin:0;letter-spacing:-2px;overflow-wrap:anywhere}
 .identity{min-width:0}
-.fly-identity{font-size:13px;color:var(--muted);margin:12px 0 0;overflow-wrap:anywhere;max-width:32ch}
+.masthead-actions{display:flex;gap:20px;flex-shrink:0}
 .text-button{display:inline-flex;align-items:center;justify-content:center;gap:12px;border:0;background:transparent;padding:10px 0;font-size:14px;min-height:44px;color:var(--ink);pointer-events:auto}
 .text-button:hover{color:var(--sugar)}
 .text-button>span{font-size:20px}
