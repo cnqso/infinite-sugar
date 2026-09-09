@@ -6,6 +6,20 @@ __pycache__/
 _to_delete/
 /data/raw/
 /dist/
+/docs/
+
+# Local editor/agent residue and temporary output.
+/AGENTS.md
+/CLAUDE.md
+.claude/
+.codex/
+.agents/
+.cursor/
+.vscode/
+.idea/
+*.log
+*.tmp
+*.bak
 
 # Local legacy Sites preview configuration; production uses Cloudflare Pages.
 /.openai/
