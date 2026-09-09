@@ -1,9 +1,11 @@
 {
   "name": "utilifly",
   "private": true,
+  "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "node tools/build_site.mjs"
+    "build": "node tools/build_site.mjs",
+    "test": "npm run build && node tools/performance_test.mjs && node tools/neural_map_test.mjs && node tools/shuffle_test.mjs"
   },
   "devDependencies": {
     "@types/three": "0.185.4",

@@ -20,7 +20,9 @@ npm ci
 ```
 
 Open [localhost:7377](http://localhost:7377). The first load takes a few seconds.
-`npm run build` produces the static site in `dist/`; `npm run typecheck` checks the source.
+The browser code is TypeScript, compiled to unbundled JavaScript in `dist/`.
+`npm run typecheck` checks the source; `npm test` builds and checks the simulation.
+The local server builds once at startup; restart it after editing source files.
 
 ## Controls
 

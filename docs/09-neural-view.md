@@ -17,7 +17,7 @@ it does not assert successful transmission or reconstruct axonal propagation. Th
 explain this. The source frame is described by the [FlyWire Codex FAQ](https://codex.flywire.ai/faq).
 
 `Brain.lastSpikeMs` records each spike during the existing sparse role-counting pass. It neither
-adds input nor changes any state used by the kernel. `web/neural-map.js` projects the data onto
+adds input nor changes any state used by the kernel. `web/neural-map.ts` projects the data onto
 a 2D canvas, caches gray geometry, and batches colored edges. Flashes decay over 65 simulated
 milliseconds. No simulation steps means no animation, including on pause. Resize rebuilds the
 canvas even while paused. The inset adds no WebGL context or independent animation loop.

@@ -1,4 +1,3 @@
-// @ts-check
 // Rendering/scheduling policy only. Physics timestep, wiring and neural gains never change.
 export const QUALITY = [
   { name:'low', pixelRatio:0.85, shadowSize:0, fps:30, mapFps:12, mapRatio:1, budgetMs:5 },
@@ -7,8 +6,15 @@ export const QUALITY = [
 ];
 
 export class AdaptiveQuality {
-  /** @param {{compact?:boolean, cores?:number, memory?:number}} [hints] */
-  constructor({ compact = false, cores = 8, memory = 8 } = {}) {
+  declare ceiling: number;
+  declare level: number;
+  declare elapsed: number;
+  declare work: number;
+  declare frames: number;
+  declare goodMs: number;
+  declare cooldownMs: number;
+
+  constructor({ compact = false, cores = 8, memory = 8 }: { compact?: boolean, cores?: number, memory?: number } = {}) {
     this.ceiling = compact || cores <= 4 || memory <= 4 ? 1 : 2;
     this.level = cores <= 2 || memory <= 2 ? 0 : this.ceiling;
     this.elapsed = 0; this.work = 0; this.frames = 0;
@@ -22,8 +28,7 @@ export class AdaptiveQuality {
     this.cooldownMs = 5000;
   }
 
-  /** @param {number} frameMs @param {number} workMs @returns {boolean} */
-  sample(frameMs, workMs) {
+  sample(frameMs: number, workMs: number): boolean {
     if (!Number.isFinite(frameMs) || !Number.isFinite(workMs) || frameMs <= 0 || frameMs > 250) {
       this.resetSampling();
       return false;

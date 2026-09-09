@@ -105,8 +105,8 @@ real. See `docs/04-roadmap.md`.
 
 # Phase 4 — the whole brain runs in a browser tab: PASSED
 
-`web/brain.js`, plain JS + typed arrays, no build step, no worker, no WebGPU. Loaded and stepped
-on the main thread inside the existing rAF loop in `app.js`.
+`web/brain.ts` uses typed arrays, with no worker or WebGPU. It compiles to an unbundled
+JavaScript module, loaded and stepped on the main thread inside the rAF loop in `app.ts`.
 
 ## Payload
 

@@ -1,16 +1,16 @@
-// @ts-check
 // Compact projection of measured neuron positions and sampled, actual graph edges.
 // A flash marks the source neuron's spike, not a measured propagation along an axon.
 
-/** @typedef {{ neuronCount:number, ids:number[], positions:number[], categories:number[], reference:number[], edges:number[][] }} MapData */
+import type { Brain } from './brain.js';
+
+type MapData = { neuronCount: number, ids: number[], positions: number[], categories: number[], reference: number[], edges: number[][] };
 const COLORS = ['#76caff', '#ec8cbc', '#f5d878'];
 const FLASH_MS = 65;
 
-/** @param {HTMLCanvasElement} canvas @param {import('./brain.js').Brain} brain */
-export async function createNeuralMap(canvas, brain) {
+export async function createNeuralMap(canvas: HTMLCanvasElement, brain: Brain) {
   const response = await fetch('./brain/neural-map.json');
   if (!response.ok) throw new Error(`neural map: HTTP ${response.status}`);
-  const map = /** @type {MapData} */ (await response.json());
+  const map = await response.json() as MapData;
   if (map.neuronCount !== brain.N || map.positions.length !== map.ids.length * 3 ||
       map.ids.some(i => !Number.isInteger(i) || i < 0 || i >= brain.N)) {
     throw new Error('neural map does not match the loaded brain');
@@ -38,8 +38,7 @@ export async function createNeuralMap(canvas, brain) {
   const xy = new Float32Array(map.ids.length * 2);
   const strength = new Float32Array(map.ids.length);
 
-  /** @param {number[]} points @param {number} i */
-  function project(points, i) {
+  function project(points: number[], i: number): [number, number] {
     // Small, fixed oblique view preserves the source frame and reveals depth.
     return [width / 2 + (points[i] + points[i + 2] * 0.12) * width * 0.92,
       height / 2 + (points[i + 1] - points[i + 2] * 0.18) * width * 0.92];
@@ -129,7 +128,6 @@ export async function createNeuralMap(canvas, brain) {
     ctx.globalAlpha = 1;
   }
   draw();
-  /** @param {number} ratio */
-  function setQuality(ratio) { maxDensity = ratio; draw(); }
+  function setQuality(ratio: number) { maxDensity = ratio; draw(); }
   return { draw, setQuality };
 }

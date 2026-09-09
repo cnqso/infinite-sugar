@@ -9,7 +9,7 @@ viewport height, a scaled loading title, and 44px stimulus buttons accommodate p
 The neural inset remains visible; landscape places controls beside it instead of squeezing
 three columns across the screen. Browser zoom remains available.
 
-`web/performance.js` selects an initial profile using screen/pointer, CPU and optional memory
+`web/performance.ts` selects an initial profile using screen/pointer, CPU and optional memory
 hints, then measures completed frame intervals and CPU work. It ignores startup and suspension
 stalls, steps down after sustained overload, and requires 15 seconds of headroom before trying
 a higher level. Mobile has a balanced quality ceiling. No user agent strings or required

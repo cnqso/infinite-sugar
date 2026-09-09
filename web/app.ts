@@ -1,5 +1,4 @@
-// @ts-check
-// iteration 1 — flybody (MuJoCo Menagerie) in MuJoCo WASM, rendered with three.js.
+// Flybody (MuJoCo Menagerie) in MuJoCo WASM, rendered with three.js.
 // Bridge pattern follows the established mujoco_wasm demos: build one three.js mesh per
 // mjModel geom, then each frame copy data.geom_xpos / data.geom_xmat onto it.
 
@@ -12,17 +11,14 @@ import { createNeuralMap } from './neural-map.js';
 import { AdaptiveQuality } from './performance.js';
 import * as CANNON from 'cannon-es';
 
-/** @typedef {import('./vendor/mujoco_wasm.js').MujocoModule} MujocoModule */
-/** @typedef {import('./vendor/mujoco_wasm.js').MjModel} MjModel */
-/** @typedef {import('./vendor/mujoco_wasm.js').MjData} MjData */
-/** @typedef {{ mesh: THREE.Mesh, group: number, gi: number, isFloor: boolean }} GeomNode */
-/** @typedef {{ file: string, target: number, abs?: [number, number, number], pos?: [number, number], rot: number }} PropDefinition */
-/** @typedef {{ wrap: THREE.Group, body: CANNON.Body, radius: number, thoraxBody: number, flyProxy: CANNON.Body }} BallState */
-/** @typedef {{ act: string, role: string, gain?: number, to?: number, peak?: number, band?: [number, number], raw?: [number, number], cmd?: boolean }} DriveDefinition */
-/** @typedef {DriveDefinition & { ai: number, qadr: number, dadr: number }} DriveEntry */
+import type { MujocoModule, MjModel, MjData } from './vendor/mujoco_wasm.js';
+type GeomNode = { mesh: THREE.Mesh, group: number, gi: number, isFloor: boolean };
+type PropDefinition = { file: string, target: number, abs?: [number, number, number], pos?: [number, number], rot: number };
+type BallState = { wrap: THREE.Group, body: CANNON.Body, radius: number, thoraxBody: number, flyProxy: CANNON.Body };
+type DriveDefinition = { act: string, role: string, gain?: number, to?: number, peak?: number, band?: [number, number], raw?: [number, number], cmd?: boolean };
+type DriveEntry = DriveDefinition & { ai: number, qadr: number, dadr: number };
 
-/** @param {string} id */
-function requiredElement(id) {
+function requiredElement(id: string) {
   const element = document.getElementById(id);
   if (!element) throw new Error(`missing required element #${id}`);
   return element;
@@ -30,8 +26,7 @@ function requiredElement(id) {
 
 const boot = requiredElement('boot');
 const bootmsg = requiredElement('bootmsg');
-/** @param {string} message */
-const say = (message) => {
+const say = (message: string) => {
   bootmsg.textContent = message.charAt(0).toUpperCase() + message.slice(1);
 };
 const $ = requiredElement;
@@ -42,19 +37,17 @@ const SCENE_XML = 'scene.xml';
 // mjtGeom
 const G = { PLANE:0, HFIELD:1, SPHERE:2, CAPSULE:3, ELLIPSOID:4, CYLINDER:5, BOX:6, MESH:7 };
 
-/** @type {MujocoModule} */ let mujoco;
-/** @type {MjModel} */ let model;
-/** @type {MjData} */ let data;
-/** @type {Brain} */ let brain;
+let mujoco: MujocoModule;
+let model: MjModel;
+let data: MjData;
+let brain: Brain;
 const sim = { paused:false, steps:0, t0:0, brainStartMs:0 };
-/** @type {GeomNode[]} */
-const geomNodes = [];
+const geomNodes: GeomNode[] = [];
 const tmpMat = new THREE.Matrix4();
 
 // ---------------------------------------------------------------- filesystem
-/** @param {MujocoModule} mj */
-async function stageFiles(mj) {
-  const manifest = /** @type {{ assets: string[] }} */ (await (await fetch(`${MODEL_DIR}/manifest.json`)).json());
+async function stageFiles(mj: MujocoModule) {
+  const manifest = (await (await fetch(`${MODEL_DIR}/manifest.json`)).json() as { assets: string[] });
   mj.FS.mkdir('/w'); mj.FS.mkdir('/w/assets');
   let done = 0;
   const files = [SCENE_XML, 'fruitfly.xml', ...manifest.assets.map(a => 'assets/' + a)];
@@ -67,8 +60,7 @@ async function stageFiles(mj) {
 }
 
 // ---------------------------------------------------------------- geometry
-/** @param {MjModel} m @param {number} dataid */
-function meshGeometry(m, dataid) {
+function meshGeometry(m: MjModel, dataid: number) {
   const va = m.mesh_vertadr[dataid], vn = m.mesh_vertnum[dataid];
   const fa = m.mesh_faceadr[dataid], fn = m.mesh_facenum[dataid];
   const pos = new Float32Array(vn * 3);
@@ -84,8 +76,7 @@ function meshGeometry(m, dataid) {
   return g;
 }
 
-/** @param {number} type @param {number} sx @param {number} sy @param {number} sz */
-function primitiveGeometry(type, sx, sy, sz) {
+function primitiveGeometry(type: number, sx: number, sy: number, sz: number) {
   switch (type) {
     case G.PLANE:     return new THREE.PlaneGeometry(40, 40, 1, 1);
     case G.SPHERE:    return new THREE.SphereGeometry(sx, 20, 14);
@@ -103,7 +94,7 @@ const NEEDS_Z_UP = new Set([G.CAPSULE, G.CYLINDER]);
 // ---------------------------------------------------------------- skybox
 // Frutiger Aero: glossy, optimistic, pale blue-to-mint gradient with soft cloud blobs.
 // Procedural — a canvas gradient, not a downloaded HDRI, so it costs nothing to keep in sync
-// with the rest of the "no build step, no bundler" convention.
+// with the rest of the "no bundler" convention.
 function skyTexture() {
   const W = 512, H = 512, cv = document.createElement('canvas');
   cv.width = W; cv.height = H;
@@ -136,8 +127,7 @@ function skyTexture() {
   return tex;
 }
 
-/** @type {THREE.CanvasTexture | null} */
-let _checker = null;
+let _checker: THREE.CanvasTexture | null = null;
 function checkerTexture() {
   if (_checker) return _checker;
   const N = 256, cv = document.createElement('canvas');
@@ -154,8 +144,7 @@ function checkerTexture() {
   return _checker;
 }
 
-/** @param {THREE.Scene} scene @param {MjModel} m */
-function buildScene(scene, m) {
+function buildScene(scene: THREE.Scene, m: MjModel) {
   let tris = 0;
   for (let i = 0; i < m.ngeom; i++) {
     const type = m.geom_type[i];
@@ -195,8 +184,7 @@ function buildScene(scene, m) {
   return tris;
 }
 
-/** @param {MjModel} m @param {MjData} d */
-function syncGeoms(m, d) {
+function syncGeoms(m: MjModel, d: MjData) {
   const R = d.geom_xmat;                            // row-major 3x3 per geom
   for (let k = 0, n = geomNodes.length; k < n; k++) {
     const i = geomNodes[k].gi;
@@ -215,16 +203,13 @@ function syncGeoms(m, d) {
 // measured scale rather than eyeballed units: each prop's own bounding box is computed after
 // load and rescaled against the fly's actual bounding box, so this survives model changes.
 // No physics involvement — these do not exist in the MuJoCo model and cast/receive shadows only.
-/** @type {PropDefinition[]} */
-const PROPS = [
+const PROPS: PropDefinition[] = [
   // abs: tuned by hand via a live debug panel (x/y/z inputs bound straight to this object's
   // position) — not derived, not guessed. z sits the terrarium's floor flush with the world floor.
   { file: 'terrarium.glb', target: 8.25, abs: [-0.5, -0.15, 1.58729], rot: 0 },
 ];
-/** @type {Record<string, THREE.Group>} */
-const propObjs = {};   // filename -> THREE.Group, for the live position debug panel
-/** @param {THREE.Scene} scene @param {THREE.Box3} flyBox */
-async function loadProps(scene, flyBox) {
+const propObjs: Record<string, THREE.Group> = {};   // filename -> THREE.Group, for the live position debug panel
+async function loadProps(scene: THREE.Scene, flyBox: THREE.Box3) {
   const flySize = new THREE.Vector3();
   flyBox.getSize(flySize);
   const flySpan = Math.max(flySize.x, flySize.y);   // footprint, not height — props are floor items
@@ -278,12 +263,11 @@ async function loadProps(scene, flyBox) {
 // restitution and rolling (real angular velocity from contact friction, not a cosmetic spin);
 // world.step()'s own fixed-timestep sub-stepping is what prevents tunneling through the glass at
 // low render framerate, rather than a hand-clamped frame delta.
-/** @type {BallState | null} */ let ball = null;
-/** @type {CANNON.World | null} */ let world = null;
+let ball: BallState | null = null;
+let world: CANNON.World | null = null;
 const _ray = new THREE.Raycaster();      // still used once at load, to find the "hilltop" start
 const _down = new THREE.Vector3(0, 0, -1);
-/** @param {THREE.Object3D[]} meshes @param {number} x @param {number} y */
-function groundUnder(meshes, x, y) {
+function groundUnder(meshes: THREE.Object3D[], x: number, y: number) {
   _ray.set(new THREE.Vector3(x, y, 50), _down);
   const hits = _ray.intersectObjects(meshes, true);
   return hits.length ? hits[0] : null;
@@ -291,8 +275,7 @@ function groundUnder(meshes, x, y) {
 
 // Bakes a THREE mesh's real triangles (in world space, at load time — the terrarium never
 // moves) into a flat vertex/index pair, ready to append into a combined CANNON.Trimesh.
-/** @param {THREE.Mesh} mesh @param {number[]} vertsOut @param {number[]} idxOut */
-function bakeMeshTriangles(mesh, vertsOut, idxOut) {
+function bakeMeshTriangles(mesh: THREE.Mesh, vertsOut: number[], idxOut: number[]) {
   mesh.updateWorldMatrix(true, false);
   const geo = mesh.geometry;
   const pos = geo.attributes.position;
@@ -308,23 +291,15 @@ function bakeMeshTriangles(mesh, vertsOut, idxOut) {
     for (let i = 0; i < pos.count; i++) idxOut.push(base + i);
   }
 }
-/** @param {THREE.Mesh[]} meshes */
-function trimeshFromMeshes(meshes) {
+function trimeshFromMeshes(meshes: THREE.Mesh[]) {
   if (!meshes.length) return null;
-  /** @type {number[]} */ const verts = [];
-  /** @type {number[]} */ const idx = [];
+  const verts: number[] = [];
+  const idx: number[] = [];
   for (const m of meshes) bakeMeshTriangles(m, verts, idx);
   return new CANNON.Trimesh(verts, idx);
 }
 
-/**
- * @param {THREE.Scene} scene
- * @param {THREE.Box3} flyBox
- * @param {THREE.Mesh[]} hillMeshes
- * @param {THREE.Mesh[]} glassMeshes
- * @param {THREE.Mesh[]} solidMeshes
- */
-async function loadBall(scene, flyBox, hillMeshes, glassMeshes, solidMeshes) {
+async function loadBall(scene: THREE.Scene, flyBox: THREE.Box3, hillMeshes: THREE.Mesh[], glassMeshes: THREE.Mesh[], solidMeshes: THREE.Mesh[]) {
   const flySize = new THREE.Vector3();
   flyBox.getSize(flySize);
   const flySpan = Math.max(flySize.x, flySize.y);
@@ -357,8 +332,7 @@ async function loadBall(scene, flyBox, hillMeshes, glassMeshes, solidMeshes) {
   // sample the terrarium's own surface for its highest reachable point ("top of the hill") —
   // not hand-placed, found the same way a marble dropped at random would find it. One-time
   // query at load, so a plain raycast (not a physics query) is the right tool.
-  /** @type {THREE.Intersection | null} */
-  let best = null;
+  let best: THREE.Intersection | null = null;
   for (let i = 0; i < 40; i++) {
     const x = -0.5 + (Math.random() - 0.5) * flySpan * 3.2;
     const y = -0.15 + (Math.random() - 0.5) * flySpan * 3.2;
@@ -437,8 +411,7 @@ async function loadBall(scene, flyBox, hillMeshes, glassMeshes, solidMeshes) {
   ball = { wrap, body: ballBody, radius, thoraxBody, flyProxy };
 }
 
-/** @param {number} dt */
-function stepBall(dt) {
+function stepBall(dt: number) {
   if (!ball || !world || dt <= 0) return;
   if (ball.thoraxBody >= 0 && data) {
     const bi = ball.thoraxBody * 3;
@@ -452,10 +425,8 @@ function stepBall(dt) {
 // ---------------------------------------------------------------- pose hold
 // 64 of the 78 actuators are position-servos. Drive them to the keyframe pose so the
 // fly stands instead of collapsing — no controller, no policy, just a held posture.
-/** @type {Float64Array} */
-let holdCtrl;
-/** @param {MjModel} m @param {MjData} d */
-function captureHoldPose(m, d) {
+let holdCtrl: Float64Array;
+function captureHoldPose(m: MjModel, d: MjData) {
   const c = new Float64Array(m.nu);
   for (let a = 0; a < m.nu; a++) {
     if (m.actuator_trntype[a] === 0) {            // joint transmission
@@ -493,8 +464,7 @@ function resetSim() {
 //
 // `gain` is how many multiples of the RESTING rate map to full joint excursion. Resting rates
 // are measured at load by brain.calibrate() — they depend on the kernel, not just the wiring.
-/** @type {DriveDefinition[]} */
-const DRIVE = [
+const DRIVE: DriveDefinition[] = [
   { act:'rostrum',              role:'mn_proboscis', gain:2.0, to:-1.24 },
   { act:'haustellum',           role:'mn_proboscis', gain:2.0, to:-1.59 },
   { act:'labrum_left',          role:'mn_proboscis', gain:2.0, to: 1.05 },
@@ -548,10 +518,8 @@ const DRIVE = [
   { act:'wing_pitch_right', role:'dn_escwing_r', peak:300, raw:[0,  0.0080], cmd:true },
   { act:'abdomen',          role:'dn_groom',     gain:1.5, to:-0.15, cmd:true },
 ];
-/** @type {DriveEntry[]} */
-let driveMap = [];
-/** @type {[number, DriveEntry[]][]} */
-let driveGroups = [];          // [actuatorIndex, entries[]] — several pools may drive one joint
+let driveMap: DriveEntry[] = [];
+let driveGroups: [number, DriveEntry[]][] = [];          // [actuatorIndex, entries[]] — several pools may drive one joint
 const WINGCLAMP = [-0.0055, 0.0105];   // measured usable band; past this the joint pins
 
 // Purely cosmetic resting offset. The folded pose clips the wings through the abdomen, so lift
@@ -559,14 +527,12 @@ const WINGCLAMP = [-0.0055, 0.0105];   // measured usable band; past this the jo
 // ON TOP of whatever the neurons are doing — it shifts the resting posture without touching any
 // neural mapping, so every response above still plays out from the new rest position.
 // Signs follow the measured ctrl->angle curves: roll+ raises, yaw- sweeps outward.
-/** @type {Record<string, number>} */
-const WINGBIAS = {
+const WINGBIAS: Record<string, number> = {
   wing_roll_left:   0.0012, wing_roll_right:  0.0012,
   wing_yaw_left:   -0.0012, wing_yaw_right:  -0.0012,
   wing_pitch_left:  0.0000, wing_pitch_right: 0.0000,
 };
-/** @param {MjModel} m @param {Brain} b */
-function buildDriveMap(m, b) {
+function buildDriveMap(m: MjModel, b: Brain) {
   driveMap = DRIVE
     .map(d => {
       const ai = mujoco.mj_name2id(m, 19 /* mjOBJ_ACTUATOR */, d.act);
@@ -574,8 +540,7 @@ function buildDriveMap(m, b) {
       return { ...d, ai, qadr: ji >= 0 ? m.jnt_qposadr[ji] : -1, dadr: ji >= 0 ? m.jnt_dofadr[ji] : -1 };
     })
     .filter(d => d.ai >= 0 && b.groups[d.role] && b.groups[d.role].length);
-  /** @type {Map<number, DriveEntry[]>} */
-  const byAct = new Map();
+  const byAct: Map<number, DriveEntry[]> = new Map();
   for (const d of driveMap) {
     if (!byAct.has(d.ai)) byAct.set(d.ai, []);
     const entries = byAct.get(d.ai);
@@ -590,8 +555,7 @@ function buildDriveMap(m, b) {
 //          sides, so the natural left/right rate difference survives as a real pose difference
 //          rather than being normalised away.
 //   gain — ratio to each pool's own measured resting rate (the motor-neuron pools).
-/** @param {Brain} b @param {DriveEntry} k */
-function activation(b, k) {
+function activation(b: Brain, k: DriveEntry) {
   let a;
   if (k.peak)      a = b.rate[k.role] / k.peak;
   else if (k.band) a = (b.rate[k.role] - k.band[0]) / (k.band[1] - k.band[0]);
@@ -604,8 +568,7 @@ function activation(b, k) {
 }
 
 let neural = true;
-/** @param {Brain} b @param {MjData} d */
-function applyBrainToActuators(b, d) {
+function applyBrainToActuators(b: Brain, d: MjData) {
   for (const [ai, entries] of driveGroups) {
     const first = entries[0];
     const base = (first.raw ? first.raw[0] : holdCtrl[ai]) + (WINGBIAS[first.act] || 0);
@@ -629,9 +592,8 @@ function applyBrainToActuators(b, d) {
 // leg motor circuit. DNg11 activity accumulates into a request; ipsilateral steering activity
 // scales the lift. The small flexion-and-return pattern is ours, not a reconstructed gait.
 // No random timer, root translation, force on the thorax, or change to the brain kernel.
-/** @typedef {{ name: string, role: string, joints: { ai: number, offset: number }[], amount: number }} ShuffleLeg */
-/** @type {ShuffleLeg[]} */
-let shuffleLegs = [];
+type ShuffleLeg = { name: string, role: string, joints: { ai: number, offset: number }[], amount: number };
+let shuffleLegs: ShuffleLeg[] = [];
 const shuffle = { enabled:true, active:-1, next:0, phase:0, charge:0,
                   cooldown:0.65, duration:0.5, strength:0, count:0 };
 
@@ -657,8 +619,7 @@ function resetShuffle() {
   for (const leg of shuffleLegs) leg.amount = 0;
 }
 
-/** @param {Brain} b @param {MjData} d @param {number} dt simulated seconds */
-function stepShuffle(b, d, dt) {
+function stepShuffle(b: Brain, d: MjData, dt: number) {
   const enabled = neural && shuffle.enabled;
   if (!enabled) {
     shuffle.active = -1; shuffle.charge = 0; shuffle.cooldown = 0.2;
@@ -728,7 +689,7 @@ function stepSimulation() {
     scene.background = skyTexture();
     scene.fog = new THREE.Fog(0xcdeaf0, 3.5, 14.0);   // matches the sky's mid-tone
 
-    const device = /** @type {Navigator & {deviceMemory?:number}} */ (navigator);
+    const device = (navigator as Navigator & {deviceMemory?:number});
     const quality = new AdaptiveQuality({
       compact:matchMedia('(pointer:coarse)').matches || Math.min(innerWidth, innerHeight) <= 700,
       cores:device.hardwareConcurrency || 8, memory:device.deviceMemory || 8,
@@ -779,13 +740,11 @@ function stepSimulation() {
     for (const g of geomNodes) if (g.group <= 2 && !g.isFloor) flyBox.expandByObject(g.mesh);
     loadProps(scene, flyBox).then(() => {
       const terrarium = propObjs['terrarium.glb'];
-      /** @type {THREE.Mesh[]} */
-      const hillMeshes = [];
+      const hillMeshes: THREE.Mesh[] = [];
       // Only the terrain/decor meshes are "ground" for the ball to land on — exclude the glass
       // shell (transparent) and the black metal frame (opaque but not something to rest on),
       // or a random hill-top search finds the outside of the glass roof, the tallest thing there.
-      /** @param {THREE.Mesh} n @returns {[number, number]} */
-      function worldZRange(n) {
+      function worldZRange(n: THREE.Mesh): [number, number] {
         n.updateWorldMatrix(true, false);
         const geo = n.geometry;
         if (!geo.boundingBox) geo.computeBoundingBox();
@@ -799,10 +758,8 @@ function stepSimulation() {
         }
         return [zmin, zmax];
       }
-      /** @type {THREE.Mesh[]} */
-      const glassMeshes = [];
-      /** @type {THREE.Mesh[]} */
-      const solidMeshes = [];
+      const glassMeshes: THREE.Mesh[] = [];
+      const solidMeshes: THREE.Mesh[] = [];
       if (terrarium) {
         // The tall fern is built from many short stacked segments, so no single mesh's own
         // span flags it as "tall" — filter by absolute height instead. Ground-level decor (the
@@ -1001,7 +958,7 @@ function stepSimulation() {
       renderer.setPixelRatio(Math.min(devicePixelRatio || 1, quality.profile.pixelRatio));
       neuralMap?.draw();
     });
-    const flyWindow = /** @type {Window & typeof globalThis & { fly?: unknown, __flyReady?: boolean, __flyError?: string }} */ (window);
+    const flyWindow = (window as Window & typeof globalThis & { fly?: unknown, __flyReady?: boolean, __flyError?: string });
     flyWindow.fly = { mujoco, model, data, brain, sim, scene, camera, renderer, controls, geomNodes, quality,
                    applyBrain: () => applyBrainToActuators(brain, data), driveMap, shuffle, shuffleLegs,
                    stepSimulation,
@@ -1024,7 +981,7 @@ function stepSimulation() {
     const message = err instanceof Error ? err.stack || err.message : String(err);
     boot.setAttribute('role', 'alert');
     boot.innerHTML = '<div class="err"><h2>Unable to start simulation.</h2><p>The simulation could not start. Try reloading in a browser with WebGL enabled.</p><a href="./">Reload</a></div>';
-    const flyWindow = /** @type {Window & typeof globalThis & { __flyError?: string }} */ (window);
+    const flyWindow = (window as Window & typeof globalThis & { __flyError?: string });
     flyWindow.__flyError = message;
   }
 })();

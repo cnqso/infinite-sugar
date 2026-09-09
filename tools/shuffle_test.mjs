@@ -1,12 +1,12 @@
 // Run the actual app's controller and clock with the vendored MuJoCo WASM and brain kernel.
-// No rendering or alternative physics model. Usage: node tools/shuffle_test.mjs
+// No rendering or alternative physics model. Usage: npm test (or build first, then node tools/shuffle_test.mjs)
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import loadMujoco from '../web/vendor/mujoco_wasm.js';
-import { Brain } from '../web/brain.js';
+import { Brain } from '../dist/brain.js';
 
 process.chdir(fileURLToPath(new URL('..', import.meta.url)));
 const mujoco = await loadMujoco();
@@ -29,7 +29,7 @@ assert.equal(brain.sugarFeedSpikes, 0, 'calibration is excluded from the artwork
 assert(brain.feedSpikes > 0, 'raw diagnostic retains resting spikes');
 const sim = { steps:0, brainStartMs:0 };
 const context = vm.createContext({ mujoco, model, data, brain, sim, performance });
-const app = fs.readFileSync('web/app.js', 'utf8');
+const app = fs.readFileSync('dist/app.js', 'utf8');
 const start = app.indexOf('// ---------------------------------------------------------------- pose hold');
 const end = app.indexOf('// ---------------------------------------------------------------- main', start);
 assert(start >= 0 && end > start, 'controller section must exist');

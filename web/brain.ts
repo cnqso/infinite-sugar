@@ -1,10 +1,9 @@
-// @ts-check
-// brain.js — whole-brain leaky integrate-and-fire over the FlyWire FAFB v783 connectome.
+// whole-brain leaky integrate-and-fire over the FlyWire FAFB v783 connectome.
 // 139,255 neurons / 2,700,513 edges, 1 kHz. Kernel traced from desktop-fly's Sim.swift
 // (MIT, Denis Shiryaev); parameters matched to tools/reflex_test.py, the reference implementation.
 // Wiring is measured; gains are hand-tuned — see docs/04-roadmap.md.
 //
-// Perf notes that are NOT optional (docs/04-roadmap.md Phase 4):
+// Kernel performance constraints:
 //   - the dense pass is fused: decay + baseline + threshold in ONE loop over N
 //   - noise and the delayed-inhibition queue are SPARSE (touched-index lists, never a full scan)
 // The naive version costs ~1050 us/step; this one costs ~100-240 us/step.
@@ -20,16 +19,10 @@ const BASE_MAX = 0.06;      // per-neuron tonic drive ~ U(0, BASE_MAX)
 const NOISE_PER_STEP = 300; // sparse random kicks per ms
 const NOISE_KICK = 0.42;
 
-/** @typedef {{ N: number, E: number, roles: Record<string, number[]> }} BrainMeta */
-/** @typedef {{ idx: Int32Array, amt: number }} ActiveStimulus */
+type BrainMeta = { N: number, E: number, roles: Record<string, number[]> };
+type ActiveStimulus = { idx: Int32Array, amt: number };
 
-/**
- * @template {ArrayBufferView} T
- * @param {string} url
- * @param {{ new(buffer: ArrayBuffer): T }} Ctor
- * @returns {Promise<T>}
- */
-async function loadBlob(url, Ctor) {
+async function loadBlob<T extends ArrayBufferView>(url: string, Ctor: { new(buffer: ArrayBuffer): T }): Promise<T> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
   if (!res.body) throw new Error(`${url}: response has no body`);
@@ -38,13 +31,40 @@ async function loadBlob(url, Ctor) {
 }
 
 export class Brain {
-  /**
-   * @param {BrainMeta} meta
-   * @param {Uint32Array} indptr
-   * @param {Uint32Array} colidx
-   * @param {Float32Array} w
-   */
-  constructor(meta, indptr, colidx, w) {
+  declare meta: BrainMeta;
+  declare N: number;
+  declare indptr: Uint32Array;
+  declare colidx: Uint32Array;
+  declare w: Float32Array;
+  declare v: Float32Array;
+  declare refr: Uint8Array;
+  declare baseline: Float32Array;
+  declare _rng: number;
+  declare inhVal: Float32Array[];
+  declare inhIdx: Int32Array[];
+  declare inhCnt: Int32Array;
+  declare spiked: Int32Array;
+  declare lastSpikeMs: Float64Array;
+  declare slot: number;
+  declare ms: number;
+  declare totalSpikes: number;
+  declare groups: Record<string, Int32Array>;
+  declare roleNames: string[];
+  declare roleOf: Int8Array;
+  declare rate: Record<string, number>;
+  declare _cnt: Int32Array;
+  declare popRate: number;
+  declare rateAlpha: number;
+  declare STIM: Record<string, string[]>;
+  declare stim: Record<string, number>;
+  declare stimDrive: number;
+  declare _active: ActiveStimulus[];
+  declare sugar: number;
+  declare feedSpikes: number;
+  declare sugarFeedSpikes: number;
+  declare rest: Record<string, number> | null;
+
+  constructor(meta: BrainMeta, indptr: Uint32Array, colidx: Uint32Array, w: Float32Array) {
     this.meta = meta;
     this.N = meta.N;
     this.indptr = indptr; this.colidx = colidx; this.w = w;
@@ -58,9 +78,7 @@ export class Brain {
     for (let i = 0; i < N; i++) this.baseline[i] = rnd() * BASE_MAX;
     this._rng = s;
 
-    /** @type {Float32Array[]} */
     this.inhVal = [];
-    /** @type {Int32Array[]} */
     this.inhIdx = [];
     this.inhCnt = new Int32Array(INH_SLOTS);
     for (let k = 0; k < INH_SLOTS; k++) {
@@ -72,14 +90,12 @@ export class Brain {
     this.lastSpikeMs = new Float64Array(N).fill(-Infinity);
     this.slot = 0; this.ms = 0; this.totalSpikes = 0;
 
-    /** @type {Record<string, Int32Array>} */
     this.groups = {};
     for (const [k, arr] of Object.entries(meta.roles)) this.groups[k] = Int32Array.from(arr);
     this.roleNames = Object.keys(this.groups);
     this.roleOf = new Int8Array(N).fill(-1);
     this.roleNames.forEach((k, ri) => { for (const i of this.groups[k]) this.roleOf[i] = ri; });
 
-    /** @type {Record<string, number>} */
     this.rate = {};
     for (const k of this.roleNames) this.rate[k] = 0;
     this._cnt = new Int32Array(this.roleNames.length);
@@ -89,7 +105,6 @@ export class Brain {
     // Sensory switches. Each maps to real FlyWire sensory populations; levels are 0..1.
     // Response of every motor pool to each of these was measured before wiring:
     // see tools/response_matrix.py and docs/05-results-phase1-3.md.
-    /** @type {Record<string, string[]>} */
     this.STIM = {
       sweet:   ['grn_sweet', 'grn_sweet_leg'],
       bitter:  ['grn_bitter'],
@@ -100,26 +115,19 @@ export class Brain {
       light:   ['visual'],
       looming: ['lc4', 'lplc2'],   // LC4 + LPLC2: the fly's actual looming detectors
     };
-    /** @type {Record<string, number>} */
     this.stim = {};
     for (const k of Object.keys(this.STIM)) this.stim[k] = 0;
     this.stimDrive = 0.20;       // membrane units at level 1
-    /** @type {ActiveStimulus[]} */
     this._active = [];           // rebuilt by setStim()
     this.sugar = 0;
     this.feedSpikes = 0;         // running total: proboscis + ingestion MN spikes
     this.sugarFeedSpikes = 0;    // same populations, counted only while sugar is enabled
-    /** @type {Record<string, number> | null} */
     this.rest = null;            // resting rate per role, filled by calibrate()
   }
 
-  /**
-   * @param {string} [base]
-   * @param {(message: string) => void} [say]
-   */
-  static async load(base = './brain', say = () => {}) {
+  static async load(base = './brain', say: (message: string) => void = () => {}) {
     say('fetching connectome');
-    const meta = /** @type {BrainMeta} */ (await (await fetch(`${base}/meta.json`)).json());
+    const meta = (await (await fetch(`${base}/meta.json`)).json()) as BrainMeta;
     say(`connectome: ${meta.N.toLocaleString()} neurons, ${meta.E.toLocaleString()} edges`);
     const [indptr, colidx, w2] = await Promise.all([
       loadBlob(`${base}/indptr.bin.gz`, Uint32Array),
@@ -133,8 +141,7 @@ export class Brain {
     return new Brain(meta, indptr, colidx, w);
   }
 
-  /** @param {string} name @param {number} level */
-  setStim(name, level) {
+  setStim(name: string, level: number) {
     if (!(name in this.stim)) return;
     this.stim[name] = level;
     this._active = [];
@@ -153,7 +160,6 @@ export class Brain {
   // one differ. Measure them here at load rather than hard-coding numbers from elsewhere.
   // Deliberately a one-shot calibration, NOT a running adaptation: a slow adaptive baseline
   // would make a sustained stimulus fade, i.e. habituation, which is ruled out by design.
-  /** @param {number} [ms] */
   calibrate(ms = 2500) {
     const saved = { ...this.stim };
     for (const k of Object.keys(this.stim)) this.setStim(k, 0);
@@ -165,7 +171,6 @@ export class Brain {
   }
 
   // Same one-shot calibration, yielded in small batches so mobile loading UI stays responsive.
-  /** @param {number} [ms] */
   async calibrateResponsive(ms = 2500) {
     const saved = { ...this.stim };
     for (const k of Object.keys(this.stim)) this.setStim(k, 0);
@@ -178,10 +183,9 @@ export class Brain {
     return this.rest;
   }
 
-  _rand() { let s = this._rng; s ^= s << 13; s ^= s >>> 17; s ^= s << 5; this._rng = s; return s >>> 0; }
+  _rand(): number { let s = this._rng; s ^= s << 13; s ^= s >>> 17; s ^= s << 5; this._rng = s; return s >>> 0; }
 
-  /** @param {number} n */
-  step(n) {
+  step(n: number) {
     const { N, v, refr, baseline, indptr, colidx, w, spiked, inhVal, inhIdx, inhCnt } = this;
     const active = this._active;
     const rFeedA = this.roleNames.indexOf('mn_proboscis');

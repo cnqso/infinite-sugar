@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { AdaptiveQuality, QUALITY } from '../web/performance.js';
+import { AdaptiveQuality, QUALITY } from '../dist/performance.js';
 function run(q, duration, frame = 1000 / q.profile.fps, work = 5) {
   for (let t = 0; t < duration; t += frame) q.sample(frame, work);
 }
@@ -31,7 +31,7 @@ console.log('PASS: conservative startup, sustained slowdown, recovery hysteresis
 // Exercise the app's actual frame and visibility handlers without a GPU.
 const fs = await import('node:fs');
 const vm = await import('node:vm');
-const app = fs.readFileSync(new URL('../web/app.js', import.meta.url), 'utf8');
+const app = fs.readFileSync(new URL('../dist/app.js', import.meta.url), 'utf8');
 const begin = app.indexOf('    // ---- loop');
 const end = app.indexOf("    addEventListener('resize'", begin);
 assert(begin >= 0 && end > begin);

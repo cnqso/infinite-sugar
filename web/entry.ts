@@ -1,4 +1,3 @@
-// @ts-check
 // A fresh page is a fresh fly. Load the simulation only after it has a name.
 const form = document.getElementById('name-form');
 const input = document.getElementById('fly-name');

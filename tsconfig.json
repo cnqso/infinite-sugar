@@ -1,7 +1,5 @@
 {
   "compilerOptions": {
-    "allowJs": true,
-    "checkJs": true,
     "strict": true,
     "noEmit": true,
     "target": "ES2022",
@@ -11,9 +9,11 @@
     "skipLibCheck": true
   },
   "include": [
-    "web/entry.js",
-    "web/app.js",
-    "web/brain.js",
+    "web/entry.ts",
+    "web/app.ts",
+    "web/brain.ts",
+    "web/neural-map.ts",
+    "web/performance.ts",
     "web/vendor/mujoco_wasm.d.ts"
   ],
   "exclude": ["web/vendor/**/*.js"]

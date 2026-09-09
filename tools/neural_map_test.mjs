@@ -2,8 +2,8 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
-import { Brain } from '../web/brain.js';
-import { createNeuralMap } from '../web/neural-map.js';
+import { Brain } from '../dist/brain.js';
+import { createNeuralMap } from '../dist/neural-map.js';
 const base = new URL('../web/brain/', import.meta.url);
 const meta = JSON.parse(fs.readFileSync(new URL('meta.json', base)));
 const map = JSON.parse(fs.readFileSync(new URL('neural-map.json', base)));
