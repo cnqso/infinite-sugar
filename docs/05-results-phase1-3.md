@@ -42,9 +42,8 @@ data/brain.npz                       10.3 MB
 ```
 
 Note the per-neuropil detail: Codex lists a connection **once per neuropil it passes through**.
-Aggregating by `(pre, post)` collapses 3.87 M rows to 2.70 M edges. `CLAUDE.md` records
-2,613,129 — the small difference is that we keep every classified neuron rather than filtering
-to the connected core.
+Aggregating by `(pre, post)` collapses 3.87 M rows to 2.70 M edges. The earlier estimate of
+2,613,129 filtered to the connected core; this model keeps every classified neuron.
 
 **Gate 1 — synaptic drive.** Motor neurons receive 1,800–3,200 synapses each; no population is
 noise-driven. (This is the trap the borrowed project shipped.)
@@ -88,9 +87,8 @@ Why, most likely: PAM sits **3–5 hops** from sugar (median 4) where the motor 
 and this model class propagates short reflex arcs well and long ones poorly. More fundamentally,
 the sugar→dopamine reward signal in a real fly is substantially **neuromodulatory** — and this
 model treats DA/SER/OCT edges as ordinary fast chemical synapses, which is exactly wrong for a
-modulator. `CLAUDE.md` already contains the general form of this warning: the one behavior this
-project requires is a reflex, and reflexes are what this model does well. Reward signalling is
-not a reflex.
+modulator. The model reproduces short reflex arcs, but this does not establish that it captures
+the dynamics of reward signalling.
 
 **Consequence for Phase 6:** the counter cannot honestly be PAM spikes. If it were, it would tick
 at a constant rate whether or not the fly is in sugar — a number we implied was meaningful that
@@ -122,8 +120,8 @@ w2      int16   2,700,513  raw  5.2 MB   gz 2.2 MB
                                          -------- 9.2 MB over the wire
 ```
 
-(`CLAUDE.md` predicted ~7.5 MB using varint row-delta encoding. 9.2 MB with plain gzip is close
-enough that the varint work is not yet worth doing.)
+(The initial estimate was ~7.5 MB using varint row-delta encoding. The implementation uses
+plain gzip, producing 9.2 MB.)
 
 ## Brain -> body
 
@@ -168,8 +166,7 @@ The rostrum joint swings ~0.8 rad (~46°) and returns. Visible without instrumen
 
 The kernel measured **771 µs/step** in headless Chromium (~1.3× realtime) against 99–240 µs in
 the Node benchmark. The gap is headless Chromium, not the code — the same page reports `fps: 9`
-because it is on software rendering, the artifact `CLAUDE.md` already documents. Measure on real
-hardware with a GPU before optimising anything here.
+with software rendering. Measure on hardware with a GPU before drawing performance conclusions.
 
 ## Known rough edges
 
@@ -294,7 +291,7 @@ in the `DRIVE` table. The distinction matters and should not be blurred:
 
 For wings this is a much smaller leap than it is for walking — a gait needs a whole controller,
 whereas escape wing-raise is a single posture — but it is still us supplying the movement. This
-is the "learned prosthesis" pattern `CLAUDE.md` warns about, entered deliberately and labelled.
+uses supplied body patterns rather than reconstructed leg or wing circuitry.
 
 ## Looming -> escape
 

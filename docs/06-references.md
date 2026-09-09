@@ -17,7 +17,7 @@ about echolocation and still not know what it is like. The gap is structural, no
 data.
 
 **Why it matters here.** This is the epistemic situation of the whole project, stated fifty years
-early. `CLAUDE.md` describes the goal as "a counter that is either meaningless or the most
+early. The work presents "a counter that is either meaningless or the most
 important number in the room, with no way for a viewer to tell which." That *is* Nagel's problem,
 instantiated as an object. We have complete third-person access — every membrane voltage, every
 one of 2.7 million synapses, the entire state vector — and that access is exactly the kind Nagel
@@ -91,8 +91,8 @@ Ancestors and neighbours, all real and citable:
 
 **Why it matters here — this is the closest one.** utilifly is the thought experiment with the
 argument removed and the object left behind. A cheap, small, continuously-stimulated nervous
-system, run for the pleasure it may or may not be having, with a counter attached. `CLAUDE.md`
-already records the decision that makes the resemblance exact: **no plasticity, no habituation**,
+system, run for the pleasure it may or may not be having, with a counter attached. The model
+has **no plasticity, no habituation**,
 so the stimulus never diminishes. That is precisely the heroin-drip condition, and it was chosen
 deliberately as an artistic decision, not stumbled into.
 

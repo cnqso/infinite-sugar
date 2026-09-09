@@ -1,29 +1,17 @@
-# Repository Guidelines
+# Repository notes
 
-## Project Structure & Module Organization
-
-The browser application lives in `web/`: `index.html` defines the page and HUD, while `app.js` and `brain.js` contain the MuJoCo/three.js bridge and connectome simulation. Runtime dependencies are deliberately committed under `web/vendor/`. MuJoCo XML, OBJ meshes, props, and generated brain blobs live in `web/model/` and `web/brain/`. Python and shell utilities in `tools/` build or validate those artifacts. Research notes and generated figures belong in `docs/` and `docs/img/`; source connectome data and derived NumPy files belong in `data/`.
-
-Read `CLAUDE.md` before changing architecture or simulation behavior. In particular, treat `web/model/*.xml` as unmodified upstream files; add an including XML for project-specific changes.
-
-## Build, Test, and Development Commands
-
-- `./serve.sh 7377` serves `web/` at `http://localhost:7377` with caching disabled. ES modules will not work by opening `index.html` directly.
-- `npm ci && npm run typecheck` installs development types and checks project JavaScript without emitting files.
-- `python3 tools/reflex_test.py --sweep` checks candidate whole-brain LIF parameters.
-- `./tools/fetch_flywire.sh && python3 tools/build_brain.py` downloads public raw data and rebuilds `data/brain.npz` plus `data/roles.json`.
-- `python3 tools/reflex_plot.py && python3 tools/export_web.py` regenerates the reflex figure and browser-ready brain blobs.
-
-The Python tools require NumPy; plot generation also requires Matplotlib. npm is only for static analysis; browser code remains unbundled.
-
-## Coding Style & Naming Conventions
-
-Use two-space indentation in JavaScript and four spaces in Python. Prefer `camelCase` for JavaScript functions and variables, `UPPER_SNAKE_CASE` for constants, and `snake_case` in Python. Keep browser code as native ES modules and preserve the current dependency-free runtime. No formatter or linter is configured, so match nearby code and keep comments focused on non-obvious physics or data assumptions.
-
-## Testing Guidelines
-
-There is no automated test suite. For browser changes, load the page in Chromium, require zero page and console errors, and inspect `window.fly`. Confirm stable thorax height, decaying `max_qvel`, and no NaNs in `qpos`. When changing the render bridge, enable collision geoms and verify exact alignment with visible limbs. Re-run the relevant Python gate when changing brain data or dynamics.
-
-## Commit & Pull Request Guidelines
-
-History currently uses short, lowercase, descriptive subjects such as `iteration 1: flybody in MuJoCo WASM + three.js`. Keep commits focused and use an imperative or outcome-oriented subject. Pull requests should explain the behavioral change, list verification commands, link relevant issues or decision notes, and include screenshots for visual changes. Call out regenerated binary or image artifacts explicitly.
+- `web/` contains the browser app, vendored runtime dependencies, body assets and connectome.
+  `tools/` builds and checks the data and simulation; `docs/` holds research and measurements.
+- Run `npm ci`, then `./serve.sh 7377`. `npm run build` produces `dist/`;
+  `npm run typecheck` checks the project sources. Keep browser modules unbundled.
+- Preserve upstream `web/model/*.xml`; use an including XML for project-specific changes.
+  Meshes are already welded losslessly. Preserve the full connectome and fixed simulation timing.
+- No learning or habituation is modeled. Changes to neural dynamics or supplied movement
+  patterns should be explicit. See [model notes](docs/04-roadmap.md).
+- Use two-space indentation in JavaScript/TypeScript and four in Python. Match nearby code.
+- For browser changes, check Chromium for page/console errors and inspect `window.fly` for
+  finite state and stable posture. When changing the render bridge, check collision alignment;
+  geom nodes must retain their MuJoCo indices, and explicit geom colors override materials.
+- Run the relevant checks in `tools/`: `performance_test.mjs`, `neural_map_test.mjs` and
+  `shuffle_test.mjs`. For brain-data changes, use `python3 tools/reflex_test.py --sweep`.
+- Keep commits focused and report what was checked. Identify regenerated data or assets.

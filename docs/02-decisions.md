@@ -53,7 +53,7 @@ model) and body inertias drift ~4%. Weld the *source* files, in their original f
 ## All meshes are visual-only
 
 Collision in `flybody` is entirely primitives: 47 capsules, 22 ellipsoids, 6 cylinders, 1 sphere,
-2 boxes. All 85 meshes are group 1 and non-colliding. This is load-bearing — it means mesh
+2 boxes. All 85 meshes are group 1 and non-colliding. This means mesh
 geometry can be changed freely without touching physics at all.
 
 ## Standing: keyframe pose held by position servos
